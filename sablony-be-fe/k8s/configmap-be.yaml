@@ -1,0 +1,11 @@
+# PRVÁ ConfigMap — env premenné pre BE (PHP)
+# Pattern: envFrom → všetky kľúče sú v PHP cez getenv()
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: be-config
+  namespace: exam-meno
+data:
+  APP_NAME: "Exam BE API"
+  LOG_LEVEL: "INFO"
+  MAX_UPLOAD_MB: "10"

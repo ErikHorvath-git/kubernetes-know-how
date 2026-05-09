@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exam-be
+  namespace: exam-meno
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exam-be              # ← service-be ho hľadá podľa toho
+  template:
+    metadata:
+      labels:
+        app: exam-be            # ← MUSÍ = matchLabels vyššie
+    spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: exam-pvc # mountuje sa LEN v BE (FE PVC nepotrebuje)
+
+      # InitContainer rieši permissions pre www-data (UID 33) na PVC
+      initContainers:
+        - name: init-data
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              mkdir -p /data
+              chown -R 33:33 /data
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+      containers:
+        - name: exam-be
+          image: exam-be:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+
+          # Pattern 1: ConfigMap → env premenné (BE číta cez getenv())
+          envFrom:
+            - configMapRef:
+                name: be-config
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html/data
+
+          readinessProbe:
+            httpGet:
+              path: /ready.php
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health.php
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10

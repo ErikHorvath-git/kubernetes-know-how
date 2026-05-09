@@ -1,0 +1,29 @@
+# DRUHÁ ConfigMap — nginx config ako súbor (iný pattern než BE!)
+# Pattern: configMap volume → mountuje sa do /etc/nginx/conf.d/default.conf
+# Aby bolo vidno 2 spôsoby použitia ConfigMap-y v jednej úlohe.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fe-config
+  namespace: exam-meno
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      root  /usr/share/nginx/html;
+      index index.html;
+
+      # statika (HTML, JS, CSS)
+      location / {
+        try_files $uri $uri/ =404;
+      }
+
+      # API proxy: /api/foo  ──►  http://exam-be-svc:80/foo
+      # exam-be-svc je názov K8s Service-y BE — DNS funguje v rámci namespace.
+      location /api/ {
+        proxy_pass         http://exam-be-svc:80/;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+      }
+    }

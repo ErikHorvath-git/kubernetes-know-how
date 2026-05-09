@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Build / runtime
+*.log
+data/
+uploads/
+
+# Generated PDFs from local builds (keep committed PDFs)
+# *.pdf  ← commit-neme PDFs sú schválne v repe
+
+# Local env
+.env
+.env.local

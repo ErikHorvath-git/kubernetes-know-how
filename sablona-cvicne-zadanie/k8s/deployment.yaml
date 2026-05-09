@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exam-app
+  namespace: exam-test1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exam-app
+  template:
+    metadata:
+      labels:
+        app: exam-app
+    spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: exam-pvc
+
+        # ─── ODKOMENTUJ pre VARIANT C (template) ───
+        # - name: cfg
+        #   configMap:
+        #     name: app-config
+        #     items:
+        #       - key: WELCOME_TEXT
+        #         path: welcome.txt
+
+      # ═══════ InitContainer ═══════
+      # Vždy potrebný (rieši permissions po mount-e PVC).
+      # Pre VARIANT C odkomentuj druhý príkaz (cp z ConfigMap-u).
+      initContainers:
+        - name: init-data
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              mkdir -p /data
+              # ─── ODKOMENTUJ pre VARIANT C ───
+              # cp /cfg/welcome.txt /data/welcome.txt
+              chown -R 33:33 /data
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            # ─── ODKOMENTUJ pre VARIANT C ───
+            # - name: cfg
+            #   mountPath: /cfg
+
+      containers:
+        - name: exam-app
+          image: exam-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            # ─── PORTY — vysvetlenie ───────────────────────────────────────
+            # containerPort = port na ktorom POČÚVA APPKA vnútri kontajnera
+            #                 (Apache v php:apache image = 80, Node.js typicky 3000…)
+            # Musí sa ZHODOVAŤ s targetPort v service.yaml.
+            # Cesta packetu:
+            #   localhost:3001  ──►  svc:port (70)  ──►  pod:targetPort (80) = containerPort
+            #   (kubectl port-forward svc/exam-svc 3001:70)
+            # ───────────────────────────────────────────────────────────────
+            - containerPort: 80
+
+          # ConfigMap → env premenné
+          envFrom:
+            - configMapRef:
+                name: app-config
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html/data
+
+          # Probes (BONUS) — funguje len ak máš v src/ aj health.php a ready.php
+          # readinessProbe:
+          #   httpGet:
+          #     path: /ready.php
+          #     port: 80
+          #   initialDelaySeconds: 3
+          #   periodSeconds: 5
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health.php
+          #     port: 80
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10

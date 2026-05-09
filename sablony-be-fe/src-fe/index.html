@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <title>Exam FE</title>
+  <style>
+    body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    .box { background: #f4f4f4; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+    .flash { background: #dff0d8; border: 1px solid #5cb85c; padding: .5rem; border-radius: 4px; }
+    .err { background: #f2dede; border: 1px solid #a94442; padding: .5rem; border-radius: 4px; }
+    code { background: #eee; padding: 2px 4px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Exam FE</h1>
+  <p>FE pod: <code id="fe-pod">-</code> · BE pod: <code id="be-pod">-</code></p>
+  <p>App: <code id="app">-</code> · max upload: <code id="max">-</code> MB</p>
+
+  <div id="msg"></div>
+
+  <div class="box">
+    <h2>Upload</h2>
+    <form id="upload-form">
+      <input type="file" name="file" required>
+      <button type="submit">Nahrať</button>
+    </form>
+  </div>
+
+  <div class="box">
+    <h2>Súbory (<span id="count">0</span>)</h2>
+    <ul id="files"><li>(loading…)</li></ul>
+  </div>
+
+<script>
+// FE volá API cez nginx proxy: /api/  ──►  exam-be-svc:80/
+async function refresh() {
+  try {
+    const r = await fetch('/api/');
+    const j = await r.json();
+    document.getElementById('app').textContent   = j.app;
+    document.getElementById('max').textContent   = j.maxMb;
+    document.getElementById('be-pod').textContent = j.pod;
+    document.getElementById('count').textContent = j.count;
+    const ul = document.getElementById('files');
+    ul.innerHTML = j.files.length
+      ? j.files.map(f => `<li>${f}</li>`).join('')
+      : '<li>(žiadne súbory)</li>';
+  } catch (e) {
+    document.getElementById('msg').innerHTML =
+      '<p class="err">BE nedostupné: ' + e.message + '</p>';
+  }
+}
+
+document.getElementById('upload-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const r = await fetch('/api/', { method: 'POST', body: fd });
+  const j = await r.json();
+  document.getElementById('msg').innerHTML = j.ok
+    ? `<p class="flash">Nahrané: ${j.file}</p>`
+    : `<p class="err">Chyba: ${j.error}</p>`;
+  e.target.reset();
+  refresh();
+});
+
+refresh();
+</script>
+</body>
+</html>
