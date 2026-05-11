@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exam-db
+  namespace: exam-meno
+spec:
+  replicas: 1                       # DB sa NIKDY neškáluje cez replicas (state collision)
+  strategy:
+    type: Recreate                  # pri update: zabi starý pred štartom nového (1 PVC = 1 reader)
+  selector:
+    matchLabels:
+      app: exam-db
+  template:
+    metadata:
+      labels:
+        app: exam-db                # ← service-db ho hľadá podľa toho
+    spec:
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: exam-pvc     # ← PVC je TU (nie v BE!)
+        - name: init-sql
+          configMap:
+            name: db-init           # init.sql z ConfigMap-y
+
+      containers:
+        - name: mariadb
+          image: mariadb:11
+          ports:
+            - containerPort: 3306
+
+          env:
+            - name: MYSQL_DATABASE
+              value: examdb         # ← MUSÍ = DB_NAME v configmap-be.yaml
+            - name: MYSQL_USER
+              value: appuser        # ← MUSÍ = DB_USER v configmap-be.yaml
+          envFrom:
+            - secretRef:
+                name: db-secret     # MYSQL_ROOT_PASSWORD + MYSQL_PASSWORD
+
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/mysql               # MariaDB ukladá dáta sem
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d  # init.sql sa spustí pri prvom štarte
+
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mariadb -u$MYSQL_USER -p$MYSQL_PASSWORD -e 'SELECT 1' examdb"]
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 30
+            periodSeconds: 10

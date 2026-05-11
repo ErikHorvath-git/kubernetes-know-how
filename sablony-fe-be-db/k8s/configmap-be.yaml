@@ -1,0 +1,16 @@
+# ConfigMap pre BE — env premenné (envFrom → PHP getenv()).
+# Citlivé veci (DB heslo) sú v secret-db.yaml, NIE tu.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: be-config
+  namespace: exam-meno
+data:
+  APP_NAME: "Exam BE+DB API"
+  MAX_UPLOAD_MB: "10"
+  LOG_LEVEL: "INFO"
+
+  # DB pripojenie — DB_HOST je DNS meno K8s Service-y DB
+  DB_HOST: "exam-db-svc"    # ← MUSÍ = metadata.name v service-db.yaml
+  DB_NAME: "examdb"         # ← MUSÍ = MYSQL_DATABASE v deployment-db.yaml
+  DB_USER: "appuser"        # ← MUSÍ = MYSQL_USER v deployment-db.yaml

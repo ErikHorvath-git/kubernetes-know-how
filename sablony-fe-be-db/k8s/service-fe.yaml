@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: exam-fe-svc
+  namespace: exam-meno
+spec:
+  type: NodePort              # JEDINÉ verejné — vstupný bod do appky
+  selector:
+    app: exam-fe              # ← MUSÍ = labels v deployment-fe.yaml
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080         # rozsah 30000-32767

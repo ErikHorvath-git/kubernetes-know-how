@@ -1,0 +1,17 @@
+# ConfigMap so SQL ktoré sa spustí pri prvom štarte DB.
+# MariaDB image spúšťa všetky .sql/.sh súbory z /docker-entrypoint-initdb.d/ — JEDEN-RAZ
+# (len ak je dátový priečinok prázdny, t.j. čerstvý PVC).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init
+  namespace: exam-meno
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS uploads (
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      name        VARCHAR(255) NOT NULL,
+      size        INT NOT NULL,
+      content     LONGBLOB NOT NULL,
+      created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );

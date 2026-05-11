@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exam-be
+  namespace: exam-meno
+spec:
+  replicas: 1                       # stateless — môžeš pokojne zdvihnúť na 2-3
+  selector:
+    matchLabels:
+      app: exam-be
+  template:
+    metadata:
+      labels:
+        app: exam-be                # ← service-be ho hľadá podľa toho
+    spec:
+      # ŽIADNY PVC — BE neukladá nič lokálne. State je v DB.
+      containers:
+        - name: exam-be
+          image: exam-be:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+
+          # ConfigMap → env (APP_NAME, MAX_UPLOAD_MB, DB_HOST, DB_NAME, DB_USER)
+          envFrom:
+            - configMapRef:
+                name: be-config
+            # Secret → env (MYSQL_PASSWORD pre PDO connect)
+            - secretRef:
+                name: db-secret
+
+          readinessProbe:
+            httpGet:
+              path: /ready.php      # pinguje DB — bez DB BE neslúži
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health.php     # len že PHP/Apache beží (NEpinguje DB)
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10

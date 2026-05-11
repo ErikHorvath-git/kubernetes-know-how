@@ -10,10 +10,15 @@ $logLevel   = getenv('LOG_LEVEL')          ?: 'INFO';
 
 $dataDir    = '/var/www/html/data';
 $uploadsDir = $dataDir . '/uploads';
-$logFile    = $dataDir . '/api.log';
+$logsDir = $dataDir . '/logs';
+$logFile    = $logsDir . '/api.log';
 
 if (!is_dir($uploadsDir)) {
     mkdir($uploadsDir, 0775, true);
+}
+
+if (!is_dir($logsDir)) {
+    mkdir($logsDir, 0775, true);
 }
 
 function log_line(string $logFile, string $level, string $msg): void {

@@ -1,6 +1,6 @@
 # Kubernetes cvičná úloha — šablóny
 
-Dve šablóny pre cvičnú úlohu *"Nasadenie vlastnej aplikácie do Kubernetes"*. Každá je samostatne použiteľná.
+Tri šablóny pre cvičnú úlohu *"Nasadenie vlastnej aplikácie do Kubernetes"*. Každá je samostatne použiteľná.
 
 ## Šablóny
 
@@ -22,6 +22,16 @@ Dve šablóny pre cvičnú úlohu *"Nasadenie vlastnej aplikácie do Kubernetes"
 - 2 ConfigMaps demonštrujú **dva rôzne patterns** (envFrom vs mounted file)
 - Detailný návod v `navod-be-fe.pdf`
 
+### [sablony-fe-be-db/](sablony-fe-be-db/) — 3-tier s databázou
+
+3 Deploymenty, 3 ConfigMapy + Secret, 3 Services. FE + BE + MariaDB v samostatných podoch.
+
+- **FE** = nginx (statický web + reverse-proxy)
+- **BE** = PHP + Apache + PDO, **stateless** (žiadny PVC)
+- **DB** = MariaDB s init SQL z ConfigMap, PVC pripojený **k DB**
+- Pridáva **Secret** pre DB heslá, init SQL cez `/docker-entrypoint-initdb.d/`
+- Upload → BE PDO → DB LONGBLOB → PVC (perzistencia v DB, nie na FS)
+
 ## Ktorú vybrať
 
 | Situácia | Šablóna |
@@ -29,6 +39,7 @@ Dve šablóny pre cvičnú úlohu *"Nasadenie vlastnej aplikácie do Kubernetes"
 | Štandardné zadanie (60 bodov + bonusy) | **sablona-cvicne-zadanie** |
 | Zadanie vyžaduje 2+ Deploymenty alebo 2+ ConfigMapy | **sablony-be-fe** |
 | Chcem ukázať pokročilé veci (multi-tier, DNS, reverse-proxy) | **sablony-be-fe** |
+| 3-vrstvová architektúra so samostatnou DB + Secret | **sablony-fe-be-db** |
 
 ## Predpoklady
 

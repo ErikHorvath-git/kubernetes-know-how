@@ -1,0 +1,30 @@
+# ConfigMap pre FE — nginx config (mountuje sa ako súbor /etc/nginx/conf.d/default.conf).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fe-config
+  namespace: exam-meno
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      root  /usr/share/nginx/html;
+      index index.html;
+
+      # zväčši limit pre upload (default 1M)
+      client_max_body_size 20M;
+
+      # statika
+      location / {
+        try_files $uri $uri/ =404;
+      }
+
+      # /api/foo → http://exam-be-svc:80/foo
+      # exam-be-svc je DNS meno K8s Service-y BE.
+      location /api/ {
+        proxy_pass         http://exam-be-svc:80/;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+      }
+    }
