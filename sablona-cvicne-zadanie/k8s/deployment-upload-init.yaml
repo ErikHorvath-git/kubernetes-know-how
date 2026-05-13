@@ -53,16 +53,16 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/www/html/data
-          # readinessProbe + livenessProbe (ak máš health.php a ready.php):
-          # readinessProbe:
-          #   httpGet:
-          #     path: /ready.php
-          #     port: 80
-          #   initialDelaySeconds: 3
-          #   periodSeconds: 5
-          # livenessProbe:
-          #   httpGet:
-          #     path: /health.php
-          #     port: 80
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /ready.php
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health.php
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10

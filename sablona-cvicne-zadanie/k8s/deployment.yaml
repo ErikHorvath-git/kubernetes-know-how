@@ -19,12 +19,12 @@ spec:
             claimName: exam-pvc
 
         # ─── ODKOMENTUJ pre VARIANT C (template) ───
-        # - name: cfg
-        #   configMap:
-        #     name: app-config
-        #     items:
-        #       - key: WELCOME_TEXT
-        #         path: welcome.txt
+        - name: cfg
+          configMap:
+            name: app-config
+            items:
+              - key: WELCOME_TEXT
+                path: welcome.txt
 
       # ═══════ InitContainer ═══════
       # Vždy potrebný (rieši permissions po mount-e PVC).
@@ -38,14 +38,14 @@ spec:
               set -e
               mkdir -p /data
               # ─── ODKOMENTUJ pre VARIANT C ───
-              # cp /cfg/welcome.txt /data/welcome.txt
+              cp /cfg/welcome.txt /data/welcome.txt
               chown -R 33:33 /data
           volumeMounts:
             - name: data
               mountPath: /data
             # ─── ODKOMENTUJ pre VARIANT C ───
-            # - name: cfg
-            #   mountPath: /cfg
+            - name: cfg
+              mountPath: /cfg
 
       containers:
         - name: exam-app
