@@ -9,4 +9,4 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/mnt/data/exam-test1"
+    path: "/mnt/data/exam-horvath"

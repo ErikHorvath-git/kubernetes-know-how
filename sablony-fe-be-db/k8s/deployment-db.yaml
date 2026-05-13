@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: exam-db
-  namespace: exam-meno
+  namespace: exam-horvath
 spec:
   replicas: 1                       # DB sa NIKDY neškáluje cez replicas (state collision)
   strategy:

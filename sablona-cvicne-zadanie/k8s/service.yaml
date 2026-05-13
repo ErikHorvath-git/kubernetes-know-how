@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: exam-svc
-  namespace: exam-test1
+  namespace: exam-horvath
 spec:
   selector:
     app: exam-app
@@ -19,7 +19,7 @@ spec:
     # Príklad: výstup z klastra port 70  ──►  localhost:3001
     #   - port 70 NIE JE platný nodePort, použi ho ako "port" (vnútorný)
     #   - mapovanie urobí port-forward, nie nodePort:
-    #       kubectl port-forward -n exam-test1 svc/exam-svc 3001:70
+    #       kubectl port-forward -n exam-horvath svc/exam-svc 3001:70
     #     → localhost:3001  ─►  svc:70 (port)  ─►  pod:80 (targetPort)
     #   - ak chceš zvonku cez NodeIP, nodePort musí byť napr. 30070
     # ───────────────────────────────────────────────────────────────────────

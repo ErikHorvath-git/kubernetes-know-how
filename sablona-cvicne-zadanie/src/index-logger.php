@@ -42,8 +42,7 @@ $count = file_exists($logFile) ? count(file($logFile)) : 0;
 pre{background:#1e1e1e;color:#dcdcdc;padding:1rem;border-radius:6px;overflow-x:auto;
 font-size:.85em;white-space:pre-wrap}</style></head><body>
 <h1><?= htmlspecialchars($appName) ?></h1>
-<p>Pod: <b><?= gethostname() ?></b> ·
-   Log level: <b><?= htmlspecialchars($logLevel) ?></b> ·
+<p>Log level: <b><?= htmlspecialchars($logLevel) ?></b> ·
    Záznamov: <b><?= $count ?></b> ·
    <a href="/?clear=1">vyčistiť</a></p>
 

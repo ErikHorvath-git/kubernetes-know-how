@@ -13,7 +13,6 @@
 </head>
 <body>
   <h1 id="title">Exam FE</h1>
-  <p>FE pod: <code id="fe-pod">-</code> · BE pod: <code id="be-pod">-</code></p>
   <p>App: <code id="app">-</code> · max upload: <code id="max">-</code> MB</p>
 
   <div id="msg"></div>
@@ -39,7 +38,6 @@ async function refresh() {
     const j = await r.json();
     document.getElementById('app').textContent   = j.app;
     document.getElementById('max').textContent   = j.maxMb;
-    document.getElementById('be-pod').textContent = j.pod;
     document.getElementById('count').textContent = j.count;
     const ul = document.getElementById('files');
     ul.innerHTML = j.files.length

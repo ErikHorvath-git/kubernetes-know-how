@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: exam-fe-svc
-  namespace: exam-meno
+  namespace: exam-horvath
 spec:
   type: NodePort             # verejné — dostupné z localhost
   selector:

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: exam-be
-  namespace: exam-meno
+  namespace: exam-horvath
 spec:
   replicas: 1                       # stateless — môžeš pokojne zdvihnúť na 2-3
   selector:

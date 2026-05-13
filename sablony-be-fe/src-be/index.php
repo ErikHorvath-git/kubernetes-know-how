@@ -57,7 +57,6 @@ $files = array_values(array_diff(
 echo json_encode([
     'app'     => $appName,
     'maxMb'   => $maxMb,
-    'pod'     => gethostname(),
     'count'   => count($files),
     'files'   => $files,
 ]);

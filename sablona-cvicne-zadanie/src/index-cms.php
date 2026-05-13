@@ -62,7 +62,6 @@ input,textarea{width:100%;padding:.4rem;margin:.2rem 0}</style></head>
 
 <nav>
   <h2><?= htmlspecialchars($siteTitle) ?></h2>
-  <p><small>Pod: <?= gethostname() ?></small></p>
   <h3>Články</h3>
   <?php foreach ($posts as $p): ?>
     <a href="?post=<?= urlencode($p) ?>">

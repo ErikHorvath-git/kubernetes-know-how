@@ -64,7 +64,6 @@ $rows = $pdo->query(
 echo json_encode([
     'app'   => $appName,
     'maxMb' => $maxMb,
-    'pod'   => gethostname(),
     'db'    => $dbHost,
     'count' => count($rows),
     'files' => $rows,

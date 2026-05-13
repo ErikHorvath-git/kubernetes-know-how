@@ -15,7 +15,7 @@
 </head>
 <body>
   <h1>Exam FE+BE+DB</h1>
-  <p>BE pod: <code id="be-pod">-</code> · DB host: <code id="db">-</code></p>
+  <p>DB host: <code id="db">-</code></p>
   <p>App: <code id="app">-</code> · max upload: <code id="max">-</code> MB</p>
 
   <div id="msg"></div>
@@ -44,7 +44,6 @@ async function refresh() {
     const j = await r.json();
     document.getElementById('app').textContent    = j.app;
     document.getElementById('max').textContent    = j.maxMb;
-    document.getElementById('be-pod').textContent = j.pod;
     document.getElementById('db').textContent     = j.db;
     document.getElementById('count').textContent  = j.count;
     const tbody = document.getElementById('files');

@@ -4,8 +4,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: be-config
-  namespace: exam-meno
+  namespace: exam-horvath
 data:
-  APP_NAME: "Exam BE API"
+  APP_NAME: "Exam HorvathVK"
   LOG_LEVEL: "INFO"
   MAX_UPLOAD_MB: "10"

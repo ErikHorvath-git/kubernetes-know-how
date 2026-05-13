@@ -35,7 +35,7 @@ $files = array_diff(scandir($uploadsDir, SCANDIR_SORT_DESCENDING) ?: [], ['.', '
 .box{background:#f4f4f4;padding:1rem;border-radius:6px;margin:1rem 0}</style></head>
 <body>
 <h1><?= htmlspecialchars($appName) ?></h1>
-<p>Pod: <b><?= gethostname() ?></b> · max: <b><?= $maxMb ?> MB</b></p>
+<p>max: <b><?= $maxMb ?> MB</b></p>
 <?php if ($msg): ?><p><b><?= $msg ?></b></p><?php endif; ?>
 
 <div class="box">

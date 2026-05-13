@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: exam-app
-  namespace: exam-test1
+  namespace: exam-horvath
 spec:
   replicas: 1
   selector:

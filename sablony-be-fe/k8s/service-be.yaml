@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: exam-be-svc          # ← týmto menom FE volá BE (DNS)
-  namespace: exam-meno
+  namespace: exam-horvath
 spec:
   type: ClusterIP            # interné — NEDOSTUPNÉ zvonku klastra
   selector:

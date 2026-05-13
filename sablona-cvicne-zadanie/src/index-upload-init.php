@@ -55,8 +55,7 @@ $files = array_diff(scandir($uploadsDir, SCANDIR_SORT_DESCENDING) ?: [], ['.', '
 </head><body>
 
 <h1><?= htmlspecialchars($appName) ?></h1>
-<p>Pod: <b><?= gethostname() ?></b> ·
-   max upload: <b><?= $maxMb ?> MB</b> ·
+<p>max upload: <b><?= $maxMb ?> MB</b> ·
    návštev: <b><?= $visits ?></b></p>
 
 <div class="welcome"><?= htmlspecialchars($welcome) ?></div>
