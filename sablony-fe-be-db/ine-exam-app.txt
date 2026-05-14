@@ -1,0 +1,148 @@
+═══════════════════════════════════════════════════════════════════
+INE-EXAM-APP — ako premenovať image-y `exam-be:latest` a `exam-fe:latest`
+                  na lubovolne nazvy (napr. `<meno>-be:latest`,
+                                            `<meno>-fe:latest`)
+═══════════════════════════════════════════════════════════════════
+
+V šablóne 3 (FE + BE + DB) si STAVIAŠ DVA image-y:
+  • `exam-be:latest`   — PHP + Apache + pdo_mysql (backend)
+  • `exam-fe:latest`   — nginx (frontend)
+
+Tretí kontajner (`mariadb:11`) sa NETÝKA — ten Kubernetes ťahá priamo
+z Docker Hubu a NESTAVIA SA lokálne, takže ho NEMENÍŠ ani neloadneš
+do Minikube.
+
+Premenovanie = 2 miesta na každý vlastný image:
+  1) tag pri `docker build` a `minikube image load`
+  2) `image:` v k8s deployment-e (musí byť IDENTICKÝ string)
+
+PRÍKLAD — premenovanie `exam-be`/`exam-fe` → `horvath-be`/`horvath-fe`
+─────────────────────────────────────────────────────────────────────
+
+Build + load (krok 2 v README.md):
+
+    docker build -f Dockerfile.be -t horvath-be:latest .
+    docker build -f Dockerfile.fe -t horvath-fe:latest .
+    minikube image load horvath-be:latest
+    minikube image load horvath-fe:latest
+
+A v každom deployment-e zmeň `image:` tak, aby sa zhodoval s tým, čo
+si nahral do Minikube.
+
+═══════════════════════════════════════
+ZOZNAM SÚBOROV, KDE TO TREBA PREPÍSAŤ
+═══════════════════════════════════════
+
+─── k8s manifesty (POVINNÉ) ───
+
+  k8s/deployment-be.yaml
+      riadok ~19:   image: exam-be:latest      →  image: horvath-be:latest
+
+  k8s/deployment-fe.yaml
+      riadok ~27:   image: exam-fe:latest      →  image: horvath-fe:latest
+
+  k8s/deployment-db.yaml
+      NEMEŇ NIČ. Riadok `image: mariadb:11` je oficiálny image
+      z Docker Hubu — nestavia sa lokálne, neťahá sa cez minikube,
+      Kubernetes si ho stiahne sám pri prvom apply.
+
+  POZOR: `imagePullPolicy: IfNotPresent` na BE/FE NECHAJ — bez toho
+         by k8s skúšal image ťahať z Docker Hubu (a tvoj custom tam nie je).
+
+  POZNÁMKA: NEPLEŤ si `image:` (=image kontajnera) so `name:` v containeri
+            ani s `app:` labelom — tie tu NEMENÍŠ.
+            Ak chceš premenovať aj DEPLOYMENTY/SERVICES/LABELS na svoje
+            meno, je to iná úprava (viď `renameNamespace.txt`).
+
+─── Dokumentačné súbory (VOLITEĽNÉ — len aby ti sedeli návody) ───
+
+  README.md
+      sekcia "Spustenie" — krok 2.
+
+  README-template.md
+      sekcia "Postup nasadenia" — krok 2.
+
+  Dockerfile.be / Dockerfile.fe — NETREBA prepisovať. Dockerfile
+      nedefinuje názov image-u, ten sa nastavuje až flagom `-t`
+      pri `docker build`.
+
+═══════════════════════════════════════
+RÝCHLA HROMADNÁ ZMENA (sed)
+═══════════════════════════════════════
+
+Z ~/exam (alebo kde máš naskopírované súbory):
+
+    # nahraď MENO svojím (napr. horvath, jano, ...)
+    MENO=horvath
+
+    sed -i "s/exam-be:latest/${MENO}-be:latest/g" k8s/*.yaml
+    sed -i "s/exam-fe:latest/${MENO}-fe:latest/g" k8s/*.yaml
+
+    # voliteľne aj v READMEoch:
+    sed -i "s/exam-be:latest/${MENO}-be:latest/g" README.md 2>/dev/null
+    sed -i "s/exam-fe:latest/${MENO}-fe:latest/g" README.md 2>/dev/null
+
+    # KONTROLA: mariadb image MUSÍ ostať nedotknutý
+    grep "image:" k8s/deployment-db.yaml
+    # → image: mariadb:11   (ak vidíš toto, je to OK)
+
+A potom build s tými istými názvami:
+
+    docker build -f Dockerfile.be -t ${MENO}-be:latest .
+    docker build -f Dockerfile.fe -t ${MENO}-fe:latest .
+    minikube image load ${MENO}-be:latest
+    minikube image load ${MENO}-fe:latest
+
+═══════════════════════════════════════
+KONTROLA, ŽE TO SEDÍ
+═══════════════════════════════════════
+
+  # 1. image-y existujú v minikube (mariadb tam ešte nie je — to je OK,
+  #    stiahne si ju až klaster pri apply)
+  minikube image ls | grep ${MENO}-
+
+  # 2. žiaden YAML už neodkazuje na staré BE/FE názvy
+  grep -r "exam-be\|exam-fe" k8s/ | grep "image:" \
+      && echo "POZOR — niekde to ešte zostalo" \
+      || echo "OK — BE/FE image-y sú premenované"
+
+  # 3. DB image NESMIE byť zmenený (musí ostať `mariadb:11`)
+  grep "image:" k8s/deployment-db.yaml
+  # očakávaný výstup: image: mariadb:11
+
+  # 4. apply a pozri status
+  kubectl apply -f k8s/
+  kubectl -n exam-meno get pods -w
+  # Všetky tri pody (FE, BE, DB) musia byť Running. DB trvá ~30s
+  # na prvý štart (sťahuje MariaDB + inicializuje schému).
+  # Pri ImagePullBackOff na BE/FE:
+  #   → buď si zabudol `minikube image load <nazov>`
+  #   → alebo `image:` v deployment-e nesedí s loadnutym nazvom
+  #     (kubectl -n exam-meno describe pod -l app=exam-be|exam-fe)
+
+═══════════════════════════════════════
+NA ČO SI DAŤ POZOR
+═══════════════════════════════════════
+
+  • Service-y (`exam-be-svc`, `exam-fe-svc`, `exam-db-svc`), `proxy_pass`
+    v `configmap-fe.yaml` a `DB_HOST: exam-db-svc` v `configmap-be.yaml`
+    odkazujú na NÁZVY SLUŽIEB, NIE na názvy image-ov. Pri premenovaní
+    image-u sa ich NETÝKA — necháš ich byť.
+
+  • DB image (`mariadb:11`) NEMEŇ. Ak ho omylom prepíšeš na `meno-db:latest`,
+    Kubernetes nenájde tvoj `meno-db:latest` v Minikube ani v Docker Hube
+    a DB pod skončí v `ImagePullBackOff`. Ak chceš vlastnú DB image,
+    je to úplne iný workflow (vlastný Dockerfile + build + load).
+
+  • BE potrebuje `pdo_mysql` (rieši to `Dockerfile.be` — `docker-php-ext-install`).
+    Pri zmene názvu image-u toto NEMENÍŠ, len si over po builde:
+        docker run --rm ${MENO}-be:latest php -m | grep pdo_mysql
+
+  • Tag (`:latest`) musí sedieť v deployment-e aj pri loade. Bez tagu
+    Docker doplní `:latest` automaticky pri builde aj pri `image:` v k8s,
+    ale najmenej prekvapení: vždy píš `:latest` všade explicitne.
+
+  • Nepoužívaj veľké písmená a špeciálne znaky v názve. Bezpečné: `[a-z0-9-]`.
+
+  • `imagePullPolicy: IfNotPresent` NEMEŇ na `Always` — inak k8s
+    odignoruje lokálny image a skúsi ťahať z Docker Hubu.

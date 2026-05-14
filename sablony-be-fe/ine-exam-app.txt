@@ -1,0 +1,125 @@
+═══════════════════════════════════════════════════════════════════
+INE-EXAM-APP — ako premenovať image-y `exam-be:latest` a `exam-fe:latest`
+                  na lubovolne nazvy (napr. `<meno>-be:latest`,
+                                            `<meno>-fe:latest`)
+═══════════════════════════════════════════════════════════════════
+
+V šablóne 2 (BE + FE) sú DVA image-y, ktoré si staviaš sám:
+  • `exam-be:latest`   — PHP + Apache backend
+  • `exam-fe:latest`   — nginx frontend
+
+Premenovanie = 2 miesta na každý image:
+  1) tag pri `docker build` a `minikube image load`
+  2) `image:` v k8s deployment-e (musí byť IDENTICKÝ string)
+
+PRÍKLAD — premenovanie `exam-be`/`exam-fe` → `horvath-be`/`horvath-fe`
+─────────────────────────────────────────────────────────────────────
+
+Build + load (krok 2 v README.md):
+
+    docker build -f Dockerfile.be -t horvath-be:latest .
+    docker build -f Dockerfile.fe -t horvath-fe:latest .
+    minikube image load horvath-be:latest
+    minikube image load horvath-fe:latest
+
+A v každom deployment-e zmeň `image:` tak, aby sa zhodoval s tým, čo
+si nahral do Minikube.
+
+═══════════════════════════════════════
+ZOZNAM SÚBOROV, KDE TO TREBA PREPÍSAŤ
+═══════════════════════════════════════
+
+─── k8s manifesty (POVINNÉ) ───
+
+  k8s/deployment-be.yaml
+      riadok ~37:   image: exam-be:latest      →  image: horvath-be:latest
+
+  k8s/deployment-fe.yaml
+      riadok ~27:   image: exam-fe:latest      →  image: horvath-fe:latest
+
+  POZOR: `imagePullPolicy: IfNotPresent` NECHAJ — bez toho by k8s skúšal
+         image ťahať z Docker Hubu (kde tvoj custom image nie je).
+
+  POZNÁMKA: NEPLEŤ si `image:` (=image kontajnera) so `name:` v containeri
+            ani s `app:` labelom — tie tu NEMENÍŠ.
+            Ak chceš premenovať aj DEPLOYMENTY/SERVICES/LABELS na svoje
+            meno, je to iná úprava (viď `renameNamespace.txt`).
+
+─── Dokumentačné súbory (VOLITEĽNÉ — len aby ti sedeli návody) ───
+
+  README.md
+      sekcia "Spustenie" — kroky 2.
+
+  README-template.md
+      sekcia "Postup nasadenia" — krok 2.
+
+  Dockerfile.be / Dockerfile.fe — NETREBA prepisovať. Dockerfile
+      nedefinuje názov image-u, ten sa nastavuje až flagom `-t`
+      pri `docker build`.
+
+═══════════════════════════════════════
+RÝCHLA HROMADNÁ ZMENA (sed)
+═══════════════════════════════════════
+
+Z ~/exam (alebo kde máš naskopírované súbory):
+
+    # nahraď MENO svojím (napr. horvath, jano, ...)
+    MENO=horvath
+
+    sed -i "s/exam-be:latest/${MENO}-be:latest/g" k8s/*.yaml
+    sed -i "s/exam-fe:latest/${MENO}-fe:latest/g" k8s/*.yaml
+
+    # voliteľne aj v READMEoch:
+    sed -i "s/exam-be:latest/${MENO}-be:latest/g" README.md 2>/dev/null
+    sed -i "s/exam-fe:latest/${MENO}-fe:latest/g" README.md 2>/dev/null
+
+A potom build s tými istými názvami:
+
+    docker build -f Dockerfile.be -t ${MENO}-be:latest .
+    docker build -f Dockerfile.fe -t ${MENO}-fe:latest .
+    minikube image load ${MENO}-be:latest
+    minikube image load ${MENO}-fe:latest
+
+═══════════════════════════════════════
+KONTROLA, ŽE TO SEDÍ
+═══════════════════════════════════════
+
+  # 1. image-y existujú v minikube
+  minikube image ls | grep ${MENO}-
+
+  # 2. žiaden YAML už neodkazuje na staré názvy
+  grep -r "exam-be\|exam-fe" k8s/ | grep "image:" \
+      && echo "POZOR — niekde to ešte zostalo" \
+      || echo "OK — image-y sú premenované"
+
+  # 3. apply a pozri status
+  kubectl apply -f k8s/
+  kubectl -n exam-meno get pods
+  # Oba pody musia byť Running. Pri ImagePullBackOff:
+  #   → buď si zabudol `minikube image load <nazov>`
+  #   → alebo `image:` v deployment-e nesedí s loadnutym nazvom
+  #     (skontroluj: kubectl -n exam-meno describe pod -l app=exam-be|exam-fe)
+
+═══════════════════════════════════════
+NA ČO SI DAŤ POZOR
+═══════════════════════════════════════
+
+  • BE a FE sú DVA samostatné image-y, každý má svoj Dockerfile a svoj
+    deployment. Nemusíš ich volať rovnako, ale je dobrý zvyk držať
+    rovnaký prefix (napr. `horvath-be`, `horvath-fe`).
+
+  • Service-y (exam-be-svc, exam-fe-svc) a nginx `proxy_pass` v
+    `configmap-fe.yaml` odkazujú na NÁZOV SLUŽBY, NIE na názov image-u.
+    Pri zmene image-u sa ich NETÝKA — necháš ich byť.
+
+  • DB sa tejto šablóny netýka.
+
+  • Tag (`:latest`) musí byť rovnaký v deployment-e aj pri loade.
+    Bez tagu Docker doplní `:latest` automaticky pri builde, ale
+    Kubernetes pri `image: horvath-be` tiež hľadá `:latest` —
+    takže sedia. Najmenej prekvapení: vždy píš `:latest` všade.
+
+  • Nepoužívaj veľké písmená a špeciálne znaky v názve. Bezpečné: `[a-z0-9-]`.
+
+  • `imagePullPolicy: IfNotPresent` NEMEŇ na `Always` — inak k8s
+    odignoruje lokálny image a skúsi ťahať z Docker Hubu.
