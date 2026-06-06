@@ -10,12 +10,6 @@ data:
   INPUT_DIR:  "/var/www/html/data/input"
   OUTPUT_DIR: "/var/www/html/data/output"
 
-  WELCOME_TEXT: |
-    Vitajte v aplikácii!
-    Tento súbor pripravil InitContainer pri štarte podu.
-    Namespace: exam-horvath
-    Aplikácia: PHP úloha
-
   SAMPLE_CSV_1: |
     name,age,city
     Alice,30,Bratislava

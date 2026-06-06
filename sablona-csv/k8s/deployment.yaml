@@ -21,8 +21,6 @@ spec:
           configMap:
             name: app-config
             items:
-              - key: WELCOME_TEXT
-                path: welcome.txt
               - key: SAMPLE_CSV_1
                 path: sample1.csv
               - key: SAMPLE_CSV_2
@@ -36,7 +34,6 @@ spec:
             - |
               set -e
               mkdir -p /data/input /data/output
-              cp /cfg/welcome.txt /data/welcome.txt
               if [ -z "$(ls -A /data/input 2>/dev/null)" ]; then
                 cp /cfg/sample1.csv /data/input/sample1.csv
                 cp /cfg/sample2.csv /data/input/sample2.csv
@@ -59,16 +56,3 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/www/html/data
-
-          readinessProbe:
-            httpGet:
-              path: /ready.php
-              port: 80
-            initialDelaySeconds: 3
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /health.php
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 10
