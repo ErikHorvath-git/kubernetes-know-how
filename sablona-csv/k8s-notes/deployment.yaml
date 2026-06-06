@@ -1,0 +1,61 @@
+apiVersion: apps/v1                           # Deployment NIE je core objekt -> API group "apps", verzia v1
+kind: Deployment                              # typ objektu: udržiava bežiace repliky podov, rieši restart/rollout
+metadata:                                     # metadáta Deploymentu
+  name: exam-app                              # meno Deploymentu (pody dostanú meno exam-app-<hash>-<id>)
+  namespace: exam-horvath                     # namespaced objekt -> patrí do nášho NS
+spec:                                         # špecifikácia Deploymentu
+  replicas: 1                                 # počet podov; 1 stačí (PVC je RWO + hostPath = jeden node)
+  selector:                                   # ako Deployment spozná "svoje" pody
+    matchLabels:                              # zhoda podľa labelov
+      app: exam-app                           # MUSÍ sedieť s template.metadata.labels, inak apply zlyhá
+  template:                                   # šablóna podu — z tohto Deployment vyrába pody
+    metadata:                                 # metadáta podu
+      labels:                                 # labely podu
+        app: exam-app                         # podľa tohto labelu pod nájde selector Deploymentu AJ Service
+    spec:                                     # špecifikácia podu
+      volumes:                                # zoznam volumes dostupných pre kontajnery podu
+        - name: data                          # interné meno volume (na toto odkazujú volumeMounts)
+          persistentVolumeClaim:              # backend = PVC (trvalé úložisko)
+            claimName: exam-pvc               # meno PVC z pvc.yaml -> cez neho sa dostaneme na exam-pv (hostPath)
+        - name: cfg                           # druhý volume: ConfigMap premietnutý ako súbory
+          configMap:                          # backend = ConfigMap
+            name: app-config                  # meno ConfigMapu z configmap.yaml
+            items:                            # výber konkrétnych kľúčov (bez items by sa premietli VŠETKY kľúče)
+              - key: SAMPLE_CSV_1             # kľúč v ConfigMape...
+                path: sample1.csv             # ...sa stane súborom /cfg/sample1.csv
+              - key: SAMPLE_CSV_2             # kľúč v ConfigMape...
+                path: sample2.csv             # ...sa stane súborom /cfg/sample2.csv
+
+      initContainers:                         # kontajnery, ktoré bežia PRED hlavným kontajnerom (musia skončiť s exit 0)
+        - name: init-data                     # meno init kontajnera (vidno v kubectl logs -c init-data)
+          image: busybox:1.36                 # minimalistický image — stačí nám shell + cp/mkdir/chown
+          command: ["sh", "-c"]               # entrypoint: spusti shell a vykonaj string z args
+          args:                               # argument pre sh -c = celý skript nižšie
+            - |                               # "|" = literal block: viacriadkový shell skript ako jeden string
+              set -e
+              # vytvor pracovné priečinky na PVC (idempotentné, -p neexistujúce vytvorí)
+              mkdir -p /data/input /data/output
+              # sample CSV kopíruj LEN ak je input/ prázdny -> pri reštarte neprepíše existujúce dáta
+              if [ -z "$(ls -A /data/input 2>/dev/null)" ]; then
+                cp /cfg/sample1.csv /data/input/sample1.csv
+                cp /cfg/sample2.csv /data/input/sample2.csv
+              fi
+              # 33:33 = www-data v php:apache image -> hlavný kontajner môže zapisovať
+              chown -R 33:33 /data
+          volumeMounts:                       # čo init kontajner vidí
+            - name: data                      # PVC volume...
+              mountPath: /data                # ...namountované na /data (tu pripravuje dáta)
+            - name: cfg                       # ConfigMap volume...
+              mountPath: /cfg                 # ...namountované na /cfg (odtiaľ číta sample CSV, read-only zdroj)
+
+      containers:                             # hlavné kontajnery podu (bežia po úspešnom dobehnutí initContainers)
+        - name: exam-app                      # meno hlavného kontajnera
+          image: gitdockeracc/exam-app:latest # náš image (php:8.2-apache + index.php) z Docker Hubu
+          ports:                              # informatívny zoznam portov (dokumentácia, neotvára nič navyše)
+            - containerPort: 80               # Apache počúva na 80; sem mieri targetPort Service
+          envFrom:                            # nalej env premenné hromadne
+            - configMapRef:                   # zdroj = celý ConfigMap (každý kľúč = jedna env premenná)
+                name: app-config              # APP_NAME, INPUT_DIR, OUTPUT_DIR... -> index.php ich číta cez getenv()
+          volumeMounts:                       # čo hlavný kontajner vidí
+            - name: data                      # ten ISTÝ PVC volume ako initContainer -> zdieľaný filesystem
+              mountPath: /var/www/html/data   # v kontajneri ako data/ pod web rootom (input/, output/)

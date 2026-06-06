@@ -1,0 +1,25 @@
+apiVersion: v1                                # ConfigMap je core objekt -> "v1"
+kind: ConfigMap                               # typ objektu: kľúč->hodnota konfigurácia (nie tajná, na to je Secret)
+metadata:                                     # metadáta objektu
+  name: app-config                            # meno ConfigMapu; Deployment naň odkazuje cez envFrom aj cez volume "cfg"
+  namespace: exam-horvath                     # ConfigMap je namespaced -> musí byť v rovnakom NS ako pod, ktorý ho používa
+data:                                         # sekcia s dátami; každý kľúč = jedna env premenná alebo súbor
+  APP_NAME: "Exam HorvathVK"                  # titulok stránky; index.php ho číta cez getenv('APP_NAME') -> vplyv ConfigMapu na správanie
+  LOG_LEVEL: "INFO"                           # úroveň logovania (demonštračná premenná)
+  PROCESS_MODE: "prepend-marker"              # režim spracovania (demonštračná premenná, popisuje čo appka robí)
+  INPUT_DIR:  "/var/www/html/data/input"      # odkiaľ index.php číta CSV; getenv('INPUT_DIR')
+  OUTPUT_DIR: "/var/www/html/data/output"     # kam index.php zapisuje spracované CSV; getenv('OUTPUT_DIR')
+
+  # POZN.: riadky vnútri blokov "|" sú surové dáta (obsah súboru) — komentár # by sa stal súčasťou dát,
+  # preto sú poznámky len tu nad blokom. "|" = literal block scalar: zachová nové riadky presne ako sú.
+  SAMPLE_CSV_1: |
+    name,age,city
+    Alice,30,Bratislava
+    Bob,25,Košice
+    Cara,40,Žilina
+
+  SAMPLE_CSV_2: |
+    product,price,stock
+    Pero,1.50,100
+    Zošit,2.00,50
+    Kniha,12.50,15

@@ -1,0 +1,13 @@
+apiVersion: v1                # Service je core objekt -> "v1"
+kind: Service                 # typ objektu: stabilná sieťová adresa pred podmi (pody vznikajú/zanikajú, Service zostáva)
+metadata:                     # metadáta objektu
+  name: exam-svc              # meno Service; zároveň DNS meno v klastri (exam-svc.exam-horvath.svc.cluster.local)
+  namespace: exam-horvath     # namespaced objekt -> v našom NS
+spec:                         # špecifikácia Service
+  selector:                   # na ktoré pody Service smeruje prevádzku
+    app: exam-app             # zhoda s labelom podu z Deploymentu -> endpointy sa plnia automaticky
+  type: NodePort              # typ: otvor port na KAŽDOM node klastra -> prístup zvonku (zadanie chce NodePort)
+  ports:                      # mapovanie portov
+    - port: 80                # port Service VNÚTRI klastra (iné pody by volali exam-svc:80)
+      targetPort: 80          # port kontajnera, kam sa prevádzka pošle (containerPort Apache)
+      nodePort: 30080         # port na node (default rozsah 30000-32767); zvonku: http://<minikube-ip>:30080

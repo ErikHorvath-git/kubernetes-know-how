@@ -1,0 +1,13 @@
+apiVersion: v1                        # PersistentVolume je core objekt -> "v1"
+kind: PersistentVolume                # typ objektu: kus úložiska v klastri (cluster-wide, NIE namespaced!)
+metadata:                             # metadáta objektu
+  name: exam-pv                       # meno PV; bez "namespace:" — PV žije mimo namespace-ov
+spec:                                 # špecifikácia úložiska
+  storageClassName: manual            # "manual" = statické provisionovanie; PVC s rovnakou triedou sa naviaže práve sem (žiadny provisioner)
+  capacity:                           # kapacita, ktorú PV ponúka
+    storage: 1Gi                      # 1 gibibajt; PVC môže žiadať <= toľkoto
+  accessModes:                        # ako smie byť volume namountovaný
+    - ReadWriteOnce                   # RWO = čítanie+zápis, ale len z jedného node-u naraz (stačí, máme 1 pod)
+  hostPath:                           # typ backendu: priečinok priamo na disku node-u (len na vývoj/minikube!)
+    path: "/mnt/data/exam-horvath"    # cesta na node, kde dáta fyzicky ležia (prežijú reštart podu)
+    type: DirectoryOrCreate           # kubelet priečinok vytvorí, ak neexistuje -> netreba ručný mkdir cez minikube ssh

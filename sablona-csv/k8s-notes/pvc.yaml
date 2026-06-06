@@ -1,0 +1,12 @@
+apiVersion: v1                # PersistentVolumeClaim je core objekt -> "v1"
+kind: PersistentVolumeClaim   # typ objektu: ŽIADOSŤ o úložisko; pod nemountuje PV priamo, ale cez PVC
+metadata:                     # metadáta objektu
+  name: exam-pvc              # meno PVC; Deployment ho referencuje cez persistentVolumeClaim.claimName
+  namespace: exam-horvath     # PVC je namespaced (na rozdiel od PV) -> musí byť tam, kde pod
+spec:                         # požiadavky na úložisko
+  storageClassName: manual    # musí sedieť s PV -> binding na statický exam-pv (nie na default provisioner)
+  accessModes:                # požadovaný režim prístupu
+    - ReadWriteOnce           # musí byť podmnožinou módov PV; RWO = jeden node číta+zapisuje
+  resources:                  # koľko úložiska žiadame
+    requests:                 # minimálna požiadavka (PVC nemá limits)
+      storage: 1Gi            # K8s nájde najmenšie PV, ktoré spĺňa všetko (trieda, módy, kapacita >= 1Gi) -> exam-pv

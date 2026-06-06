@@ -1,0 +1,4 @@
+apiVersion: v1                # Namespace je core objekt -> API group prázdna, len "v1"
+kind: Namespace               # typ objektu: logický priestor na oddelenie zdrojov v klastri
+metadata:                     # metadáta objektu (meno, labels, anotácie...)
+  name: exam-horvath          # meno namespace podľa zadania "exam-{meno}"; ostatné objekty ho referencujú cez "namespace:"
